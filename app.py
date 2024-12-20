@@ -34,11 +34,11 @@ def webhook():
 
                     # Risposta generata da ChatGPT
                     response = openai.ChatCompletion.create(
-                        model="gpt-4",
-                        messages=[
-                            {"role": "system", "content": "Rispondi come [il tuo nome]."},
-                            {"role": "user", "content": user_message}
-                        ]
+                       model="gpt-3.5-turbo",
+                       messages=[
+                        {"role": "system", "content": "Rispondi come [il tuo nome]."},
+                        {"role": "user", "content": user_message}
+                       ]
                     )
                     reply = response['choices'][0]['message']['content']
 
