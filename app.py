@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # Carica il modello Hugging Face
-MODEL_NAME = "microsoft/DialoGPT-medium"  # Modello leggero per chatbot
+MODEL_NAME = "distilgpt2"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
 
@@ -56,4 +56,7 @@ def send_message(recipient_id, text):
     requests.post(url, json=payload, headers=headers)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    import os
+    port = int(os.environ.get('PORT', 5000))  # Usa la porta definita da Render, altrimenti 5000
+    app.run(host='0.0.0.0', port=port)
+
