@@ -1,14 +1,18 @@
 from flask import Flask, request
-import openai
+from transformers import AutoModelForCausalLM, AutoTokenizer
 import requests
 import os
 
 app = Flask(__name__)
 
-# Carica le chiavi API dalle variabili d'ambiente
-openai.api_key = os.getenv('OPENAI_API_KEY')  # Chiave OpenAI
-PAGE_ACCESS_TOKEN = os.getenv('PAGE_ACCESS_TOKEN')  # Chiave di accesso di Facebook
-VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')  # Token di verifica di Meta
+# Carica il modello Hugging Face
+MODEL_NAME = "microsoft/DialoGPT-medium"  # Modello leggero per chatbot
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
+
+# Variabili d'ambiente
+PAGE_ACCESS_TOKEN = os.getenv('PAGE_ACCESS_TOKEN')
+VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
 
 @app.route('/', methods=['GET'])
 def verify():
@@ -32,15 +36,10 @@ def webhook():
                     user_message = message['message']['text']
                     sender_id = message['sender']['id']
 
-                    # Risposta generata da ChatGPT
-                    response = openai.ChatCompletion.create(
-                       model="gpt-3.5-turbo",
-                       messages=[
-                        {"role": "system", "content": "Rispondi come [il tuo nome]."},
-                        {"role": "user", "content": user_message}
-                       ]
-                    )
-                    reply = response['choices'][0]['message']['content']
+                    # Risposta generata dal modello Hugging Face
+                    inputs = tokenizer.encode(user_message, return_tensors="pt")
+                    outputs = model.generate(inputs, max_length=50, num_return_sequences=1)
+                    reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
                     # Invia la risposta a Messenger
                     send_message(sender_id, reply)
@@ -58,4 +57,3 @@ def send_message(recipient_id, text):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
