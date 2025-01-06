@@ -2,4 +2,5 @@ flask
 transformers
 requests
 gunicorn
+torch
 
