@@ -14,8 +14,12 @@ model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
 PAGE_ACCESS_TOKEN = os.getenv('PAGE_ACCESS_TOKEN')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
 
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['GET', 'HEAD'])
 def verify():
+    # Gestione delle richieste HEAD
+    if request.method == 'HEAD':
+        return '', 200  # Risponde con uno stato HTTP 200 OK e nessun contenuto
+
     # Verifica del webhook
     mode = request.args.get('hub.mode')
     token = request.args.get('hub.verify_token')
@@ -59,4 +63,5 @@ if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 5000))  # Usa la porta definita da Render, altrimenti 5000
     app.run(host='0.0.0.0', port=port)
+
 
