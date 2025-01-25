@@ -16,7 +16,6 @@ VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
 
 @app.route('/', methods=['GET', 'HEAD'])
 def verify():
-    # Gestione delle richieste HEAD
     if request.method == 'HEAD':
         return '', 200  # Risponde con uno stato HTTP 200 OK e nessun contenuto
 
@@ -30,7 +29,6 @@ def verify():
 
 @app.route('/', methods=['POST'])
 def webhook():
-    # Ricezione dei messaggi dal webhook
     data = request.json
     if 'entry' in data:
         for entry in data['entry']:
@@ -41,12 +39,13 @@ def webhook():
                     sender_id = message['sender']['id']
 
                     # Risposta generata dal modello Hugging Face
-                    inputs = tokenizer.encode(user_message, return_tensors="pt")
+                    inputs = tokenizer(user_message, return_tensors="pt", padding=True, truncation=True)
                     outputs = model.generate(
-                        inputs,
+                        inputs["input_ids"],
+                        attention_mask=inputs["attention_mask"],
                         max_length=50,
                         num_return_sequences=1,
-                        pad_token_id=tokenizer.eos_token_id  # Correzione per i warning
+                        pad_token_id=tokenizer.eos_token_id  # Imposta pad_token_id correttamente
                     )
                     reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
@@ -55,7 +54,6 @@ def webhook():
     return 'Event received', 200
 
 def send_message(recipient_id, text):
-    # Invia il messaggio di risposta a Messenger
     url = f'https://graph.facebook.com/v16.0/me/messages?access_token={PAGE_ACCESS_TOKEN}'
     payload = {
         "recipient": {"id": recipient_id},
@@ -66,5 +64,5 @@ def send_message(recipient_id, text):
 
 if __name__ == '__main__':
     import os
-    port = int(os.environ.get('PORT', 5000))  # Usa la porta definita da Render, altrimenti 5000
+    port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
