@@ -1,6 +1,5 @@
 from flask import Flask, request
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch  # Necessario per gestire i tensori
 import requests
 import os
 
@@ -43,21 +42,12 @@ def webhook():
 
                     # Risposta generata dal modello Hugging Face
                     inputs = tokenizer.encode(user_message, return_tensors="pt")
-                    
-                    # Creazione del `attention_mask` per evitare avvertimenti
-                    inputs_with_mask = {
-                        "input_ids": inputs,
-                        "attention_mask": torch.ones_like(inputs)  # Genera una maschera basata sugli input
-                    }
-                    
-                    # Generazione della risposta
                     outputs = model.generate(
-                        **inputs_with_mask, 
-                        max_length=50, 
-                        num_return_sequences=1, 
-                        pad_token_id=tokenizer.eos_token_id  # Aggiunta per evitare avvisi su `pad_token_id`
+                        inputs,
+                        max_length=50,
+                        num_return_sequences=1,
+                        pad_token_id=tokenizer.eos_token_id  # Correzione per i warning
                     )
-                    
                     reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
                     # Invia la risposta a Messenger
