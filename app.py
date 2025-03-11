@@ -9,11 +9,11 @@ app = Flask(__name__)
 MODEL_NAME = "distilgpt2"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
-model.config.pad_token_id = model.config.eos_token_id  # Evita l'errore del pad_token
+model.config.pad_token_id = model.config.eos_token_id  # Correzione per il pad_token
 
-# Credenziali di Meta
-PAGE_ACCESS_TOKEN = os.getenv('PAGE_ACCESS_TOKEN')  # Aggiungi il tuo token
-VERIFY_TOKEN = os.getenv('VERIFY_TOKEN', '12345')  # Token di verifica
+# Token di Meta (presi dalle variabili d'ambiente su Render)
+PAGE_ACCESS_TOKEN = os.getenv('PAGE_ACCESS_TOKEN')  # Token della Pagina Facebook/Instagram
+VERIFY_TOKEN = os.getenv('VERIFY_TOKEN', 'Simone260889')  # Usa il token impostato su Render
 
 @app.route('/', methods=['GET'])
 def verify():
@@ -40,7 +40,7 @@ def webhook():
 
                     # Genera risposta ChatGPT
                     inputs = tokenizer(user_message, return_tensors="pt", padding=True, truncation=True)
-                    outputs = model.generate(inputs, max_length=50)
+                    outputs = model.generate(inputs.input_ids, max_length=50)
                     reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
                     # Invia risposta a Instagram
