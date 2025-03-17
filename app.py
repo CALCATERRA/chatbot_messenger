@@ -2,19 +2,28 @@ import os
 import requests
 import json
 from flask import Flask, request
-from transformers import AutoModelForCausalLM, AutoTokenizer
 
 app = Flask(__name__)
 
-# Caricamento delle variabili d'ambiente
+# Variabili d'ambiente
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "Simone260889")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Caricamento del modello e del tokenizer
-MODEL_NAME = "facebook/opt-1.3b"  # Modello di Facebook AI
-model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-tokenizer.pad_token = tokenizer.eos_token  # Imposta il padding token
+def generate_response(prompt):
+    """Genera una risposta usando OpenAI GPT-3.5."""
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.7
+    }
+    response = requests.post(url, headers=headers, json=data)
+    return response.json()["choices"][0]["message"]["content"].strip()
 
 @app.route("/", methods=["GET"])
 def webhook_verify():
@@ -40,10 +49,8 @@ def webhook():
                 if "message" in messaging:
                     user_message = messaging["message"]["text"]
                     
-                    # Generazione della risposta
-                    inputs = tokenizer(user_message, return_tensors="pt", padding=True, truncation=True)
-                    response_ids = model.generate(**inputs, max_length=150)
-                    bot_response = tokenizer.decode(response_ids[0], skip_special_tokens=True)
+                    # Genera risposta con GPT-3.5
+                    bot_response = generate_response(user_message)
                     
                     send_message(sender_id, bot_response)
     return "EVENT_RECEIVED", 200
